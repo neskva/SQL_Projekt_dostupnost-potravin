@@ -32,10 +32,6 @@ Analytické oddělení nezávislé společnosti zabývající se životní úrov
 - **`02_analytical_queries.sql`** - Analytické dotazy pro výzkumné otázky
 - **`03_create_result_tables.sql`** - Výsledkové tabulky
 
-### Vyčištěné verze
-- **`02_analytical_queries_clean.sql`** - CTE místo vnořených SELECT
-- **`03_create_result_tables_clean.sql`** - CTE místo vnořených SELECT
-
 ---
 
 ##   Klíčové technické poznatky

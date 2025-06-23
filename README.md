@@ -27,12 +27,11 @@ Analytické oddělení nezávislé společnosti zabývající se životní úrov
 ##  Struktura souborů
 
 ### Hlavní SQL skripty
-- **`00_reference_ciselníky.sql`** - Referenční číselníky a debugging poznámky
+- **`00_reference_dials.sql`** - Referenční číselníky a debugging poznámky
 - **`01_create_tables.sql`** - Vytvoření hlavních tabulek
 - **`02_analytical_queries.sql`** - Analytické dotazy pro výzkumné otázky
 - **`03_create_result_tables.sql`** - Výsledkové tabulky
 
-```
 
 ### Debugging kroky, které fungovaly:
 1. **Systematické testování kombinací kódů** před implementací
@@ -42,59 +41,7 @@ Analytické oddělení nezávislé společnosti zabývající se životní úrov
 
 ---
 
-##  Hlavní problémy a jejich řešení
-
-### 1. Prázdná hlavní tabulka 
-**Problém**: `CREATE TABLE` vrátilo 0 záznamů
-```sql
---  NESPRÁVNĚ (0 záznamů)
-WHERE value_type_code = 5958 AND unit_code = 80403 AND calculation_code = 200
-
---  SPRÁVNĚ (3440 záznamů)  
-WHERE value_type_code = 5958 AND unit_code = 200 AND calculation_code = 200
-```
-**Ponaučení**: Unit_code 80403 (Kč) se v prvotní verzi nepoužíval s mzdami, ale jen s počty osob. Při jedné z následujících lekcí došlo k opravě na straně základní databáze
-
-### 2. Chyba ROUND() funkce 
-**Problém**: `function round(double precision, integer) does not exist`
-```sql
---  NESPRÁVNĚ
-ROUND(AVG(cp.value), 2)
-
---  SPRÁVNĚ  
-ROUND(AVG(cp.value)::numeric, 2)
-```
-**Vysvětlení**: PostgreSQL vyžaduje explicitní přetypování na `numeric` pro `ROUND()`.
-
-### 3. Syntaktická chyba vnořených subqueries 
-**Problém**: `syntax error at or near 'ceny'`
-```sql
---  NESPRÁVNĚ - vnořené SELECT v FROM
-FROM (SELECT ...) ceny
-JOIN (SELECT ...) mzdy ON ...
-
---  SPRÁVNĚ - WITH klauzule (CTE)
-WITH ceny AS (SELECT ...),
-     mzdy AS (SELECT ...)
-SELECT ... FROM ceny JOIN mzdy ON ...
-```
-
-### 4. Duplicitní data v sekundární tabulce 
-**Problém**: Otázka 5 hlásila 26/52 let místo 13 let
-```sql
--- Identifikace problému
-SELECT rok, COUNT(*) FROM t_filip_hedvik_project_SQL_secondary_final 
-WHERE zeme = 'Czech Republic' GROUP BY rok;
--- Výsledek: každý rok měl 4 identické záznamy
-
--- Řešení u zdroje
-CREATE TABLE t_filip_hedvik_project_SQL_secondary_final AS
-SELECT DISTINCT * FROM t_filip_hedvik_project_SQL_secondary_final_raw;
-```
-
----
-
-##  Výsledné tabulky z **`03_create_result_tables.sql`**
+##  Výsledné tabulky
 
 ### Hlavní výstupy
 1. **`t_filip_hedvik_project_SQL_primary_final`** 

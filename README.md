@@ -1,5 +1,5 @@
 # Analýza dostupnosti základních potravin v České republice
-**Projekt z SQL | Autor: Filip Hedvik | Datum: 2025-06-05**
+**Projekt z SQL | Autor: Filip Hedvik **
 
 ##  Přehled projektu
 
@@ -32,23 +32,6 @@ Analytické oddělení nezávislé společnosti zabývající se životní úrov
 - **`02_analytical_queries.sql`** - Analytické dotazy pro výzkumné otázky
 - **`03_create_result_tables.sql`** - Výsledkové tabulky
 
----
-
-##   Klíčové technické poznatky
-
-### Používané číselníky 
-
-#### Mzdy - finální kombinace kódů:
-```sql
-value_type_code = 5958  -- Průměrná hrubá mzda na zaměstnance
-unit_code = 200         -- tisíce Kč (ne 80403!)
-calculation_code = 200  -- přepočtený (standardizovaná data)
-```
-
-#### Potraviny - konkrétní kódy:
-```sql
-114201 -- Mléko polotučné pasterované (l)
-111301 -- Chléb konzumní kmínový (kg)
 ```
 
 ### Debugging kroky, které fungovaly:
@@ -111,7 +94,7 @@ SELECT DISTINCT * FROM t_filip_hedvik_project_SQL_secondary_final_raw;
 
 ---
 
-##  Výsledné tabulky
+##  Výsledné tabulky z **`03_create_result_tables.sql`**
 
 ### Hlavní výstupy
 1. **`t_filip_hedvik_project_SQL_primary_final`** 
@@ -132,32 +115,6 @@ SELECT DISTINCT * FROM t_filip_hedvik_project_SQL_secondary_final_raw;
 
 ---
 
-##  Klíčová zjištění 
-
-### Otázka 1: Vývoj mezd
-- **Analyzováno**: Všechna odvětví v ČR (2006 vs 2018)
-- **Výsledek**: Většina odvětví zaznamenala růst mezd
-- **Průměrný růst**: Cca 30-50% za 12 let
-
-### Otázka 2: Kupní síla
-- **Mléko**: Změna kupní síly 2006 → 2018
-- **Chléb**: Změna kupní síly 2006 → 2018
-- **Trend**: Zlepšení/zhoršení kupní síly
-
-### Otázka 3: Inflace potravin
-- **Analyzováno**: 28 kategorií potravin
-- **Nejpomalejší zdražování**: [výsledek z analýzy]
-- **Nejrychlejší zdražování**: [výsledek z analýzy]
-
-### Otázka 4: Cenové šoky
-- **Kritérium**: Rozdíl růstu cen vs mezd >10%
-- **Problematické roky**: [identifikované roky]
-
-### Otázka 5: Vliv HDP
-- **Korelace**: HDP vs mzdy vs ceny potravin
-- **Časové posuny**: Projeví se změna HDP ve stejném nebo následujícím roce?
-
----
 
 ##  Metodika analýzy
 
@@ -191,7 +148,6 @@ SELECT DISTINCT * FROM t_filip_hedvik_project_SQL_secondary_final_raw;
 
 
 **Autor**: Filip Hedvik  
-**Poslední aktualizace**: 2025-06-05  
 **Verze databáze**: PostgreSQL  
 
 **Pro dotazy k projektu**:

@@ -34,7 +34,7 @@ WITH mzdy_raw AS (
     WHERE 
         -- OVĚŘENÉ KÓDY z referenčního souboru:
         mzdy.value_type_code = 5958        -- Průměrná hrubá mzda na zaměstnance
-        AND mzdy.unit_code = 200           -- tisíce Kč (ne 80403!)
+        AND mzdy.unit_code = 200           -- Kč
         AND mzdy.calculation_code = 200    -- přepočtený (standardizovaná data)
         -- ČASOVÉ A KVALITNÍ FILTRY:
         AND mzdy.payroll_year BETWEEN 2006 AND 2018
@@ -49,8 +49,7 @@ mzdy_agregace AS (
         kod_odvetvi,
         nazev_odvetvi,
         jednotka_mzdy,
-        ROUND(AVG(mzda_hodnota)::numeric, 2) AS prumerna_mzda,
-        COUNT(*) AS pocet_zaznamu_mzdy
+        ROUND(AVG(mzda_hodnota)::numeric, 2) AS prumerna_mzda        
     FROM mzdy_raw
     GROUP BY rok, kod_odvetvi, nazev_odvetvi, jednotka_mzdy
     HAVING COUNT(*) >= 2  -- Alespoň 2 záznamy pro spolehlivý průměr
@@ -63,7 +62,7 @@ ceny_raw AS (
         ceny.value AS cena_hodnota,
         kategorie.name AS nazev_potraviny,
         kategorie.price_unit AS jednotka_ceny
-    FROM czechia_price ceny
+    FROM czechia_price AS ceny
     JOIN czechia_price_category AS kategorie ON ceny.category_code = kategorie.code
     WHERE 
         -- ČASOVÉ A KVALITNÍ FILTRY:
@@ -78,14 +77,13 @@ ceny_agregace AS (
         rok,
         nazev_potraviny,
         jednotka_ceny,
-        ROUND(AVG(cena_hodnota)::numeric, 2) AS prumerna_cena,
-        COUNT(*) AS pocet_zaznamu_ceny
+        ROUND(AVG(cena_hodnota)::numeric, 2) AS prumerna_cena
     FROM ceny_raw
     GROUP BY kod_potraviny, rok, nazev_potraviny, jednotka_ceny
     HAVING COUNT(*) >= 3  -- Alespoň 3 záznamy pro spolehlivý průměr
 ),
 finalni_data AS (
-    -- KROK 5: Spojení mezd a cen se základní kontrolou správnosti
+    -- KROK 5: Spojení mezd a cen
     SELECT 
         -- IDENTIFIKÁTORY A ČAS
         mzdy_data.rok,
@@ -96,13 +94,13 @@ finalni_data AS (
         mzdy_data.nazev_odvetvi,
         mzdy_data.prumerna_mzda,
         mzdy_data.jednotka_mzdy,
-        mzdy_data.pocet_zaznamu_mzdy,
+        
         
         -- CENOVÉ ÚDAJE  
         ceny_data.nazev_potraviny,
         ceny_data.prumerna_cena,
         ceny_data.jednotka_ceny,
-        ceny_data.pocet_zaznamu_ceny,
+        
         
         -- KONTROLA KVALITY DAT
         CASE 
@@ -110,7 +108,7 @@ finalni_data AS (
             ELSE 'CHYBA_DATA'
         END AS kontrola_kvality
         
-    FROM mzdy_agregace mzdy_data
+    FROM mzdy_agregace AS mzdy_data
     CROSS JOIN ceny_agregace AS ceny_data
     WHERE mzdy_data.rok = ceny_data.rok  -- Spojení pouze pro stejné roky
 )
@@ -151,7 +149,7 @@ WITH evropske_zeme AS (
         zeme.capital_city AS hlavni_mesto,
         zeme.region_in_world AS region,
         zeme.population AS populace
-    FROM countries zeme
+    FROM countries AS zeme
     WHERE zeme.region_in_world IN (
         'Eastern Europe', 'Western Europe', 'Southern Europe', 
         'Central and Southeast Europe', 'Nordic Countries', 
@@ -167,7 +165,7 @@ ekonomicka_data AS (
         ekonomie.gdp AS hdp,
         ekonomie.gini AS gini_koeficient,
         ekonomie.taxes AS danove_zatez
-    FROM economies ekonomie
+    FROM economies AS ekonomie
     WHERE 
         ekonomie.year BETWEEN 2006 AND 2018
         AND ekonomie.gdp IS NOT NULL
@@ -184,10 +182,11 @@ spojene_data AS (
         ekonomika.hdp,
         ekonomika.gini_koeficient,
         ekonomika.danove_zatez
-    FROM evropske_zeme evropa
-    JOIN ekonomicka_data ekonomika ON evropa.zeme = ekonomika.zeme
+    FROM evropske_zeme AS evropa
+    JOIN ekonomicka_data AS ekonomika ON evropa.zeme = ekonomika.zeme
 )
-SELECT 
+-- Přidáno DISTINCT na začátek pro eliminaci duplikátů
+SELECT DISTINCT
     -- ZÁKLADNÍ INFORMACE O ZEMI
     zeme,
     hlavni_mesto,

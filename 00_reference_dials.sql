@@ -10,13 +10,17 @@
 Tento soubor obsahuje všechny číselníky a ověřené kódy použité v projektu.
 Slouží jako referenční dokumentace pro budoucí použití a údržbu.
 
-STRUKTURA:
+STRUKTURA TOHOTO SOUBORU (00_reference_dials.sql):
 1. Ověřené kódy použité v projektu
-2. Kompletní číselníky pro mzdy  
-3. Kompletní číselníky pro ceny potravin
-4. Dodatečné číselníky
-5. Kontrolní dotazy
-6. Známé problémy a jejich řešení
+2. Historie řešených problémů
+3. Historie změn  
+4. Kompletní číselníky pro mzdy a ceny
+5. Kontrolní dotazy pro NULL hodnoty
+
+STRUKTURA OSTATNÍCH SOUBORŮ:
+- 01_create_tables.sql: Vytvoření primární a sekundární tabulky
+- 02_analytical_queries.sql: 5 výzkumných otázek (mzdy, kupní síla, zdražování, rozdíly, HDP)
+- 03_create_result_tables.sql: Výsledkové tabulky pro každou otázku
 
 DŮLEŽITÉ: Tento soubor slouží pouze k prohlížení číselníků, 
 není určen pro spuštění jako celku!
@@ -27,9 +31,9 @@ není určen pro spuštění jako celku!
 -- =====================================================
 
 /*
-FINÁLNÍ KOMBINACE KÓDŮ PRO MZDY (ověřeno 2025-06-05):
+FINÁLNÍ KOMBINACE KÓDŮ PRO MZDY:
 - value_type_code = 5958 (Průměrná hrubá mzda na zaměstnance)
-- unit_code = 200 (tis. osob - ve skutečnosti tisíce Kč)
+- unit_code = 200 (Kč)
 - calculation_code = 200 (přepočtený)
 - Období: 2006-2018
 - Počet záznamů: 1720
@@ -68,15 +72,31 @@ DATOVÉ TYPY (ze skutečné databázové struktury):
 /*
 PROBLÉMY KTERÉ JSME VYŘEŠILI A JAK:
 
-1. PRÁZDNÁ HLAVNÍ TABULKA (01_create_tables.sql)
-   PROBLÉM: CREATE TABLE vrátilo 0 záznamů
-   PŘÍČINA: Nesprávná kombinace kódů - použili jsme 5958+80403+200, ale tato kombinace neexistuje
-   VYSVĚTLENÍ KÓDŮ:
-   - 5958 = Průměrná hrubá mzda na zaměstnance  (správný typ hodnoty)
-   - 80403 = Kč  (jednotka nekompatibilní s mzdami)  
-   - 200 = přepočtený  (správný typ kalkulace)
-   SPRÁVNÁ KOMBINACE: 5958 + 200 (tis. osob) + 200 (přepočtený)
-   ŘEŠENÍ: Změna unit_code z 80403 na 200
+1. PRÁZDNÁ HLAVNÍ TABULKA
+PŘÍZNAK: CREATE TABLE vrátilo 0 záznamů
+PŘÍČINA: Špatná kombinace kódů value_type=5958 + unit_code=80403 + calculation=200
+ZJIŠTĚNÍ: Unit_code 80403 (Kč) se nepoužívá s mzdami!
+ŘEŠENÍ: Změna unit_code z 80403 na 200
+DEBUGGING PROCES:
+1. Test: SELECT COUNT(*) WHERE value_type_code=5958 AND unit_code=80403 → 0 záznamů ❌
+2. Test: SELECT COUNT(*) WHERE value_type_code=5958 AND unit_code=200 → 3440 záznamů ✅
+3. Kontrola: SELECT * FROM czechia_payroll_unit WHERE code IN (80403, 200)
+   - 80403 = "Kč" ← logické, ale nefunguje s mzdami
+   - 200 = "tis. osob" ← matoucí název! Ve skutečnosti pro mzdy = "tisíce Kč"
+
+MATOUCÍ SITUACE S ČÍSELNÍKEM:
+- unit_code = 200 má název "tis. osob" (tisíce osob)
+- ALE pro mzdy to znamená "tisíce Kč"!
+- unit_code = 80403 má logický název "Kč" 
+- ALE nefunguje s mzdami, jen s počty osob
+
+TESTOVÁNÍ: SELECT unit_code, COUNT(*) FROM czechia_payroll WHERE value_type_code=5958 GROUP BY unit_code;
+VÝSLEDEK: Pouze unit_code = 200 má data pro mzdy (i když název je matoucí)
+	PONAUČENÍ: 
+			1. Vždy testovat existující kombinace místo předpokladů
+			2. Číselníky mohou mít matoucí názvy - testovat na skutečných datech!
+			3. Logický název neznamená správné použití
+Finální řešení: Na jedné z následující lekcí došlo k nahlášení chyby a k opravě v základnímu číselníku, takže už název kódu odpovídá			
 
 2. CHYBA ROUND() FUNKCE 
    PROBLÉM: "function round(double precision, integer) does not exist"
@@ -124,8 +144,8 @@ HISTORIE ZMĚN:
 -  Vyčištění sekundární tabulky od duplikátů (problém s počtem let v otázce 5)
 -  Přidání kod_odvetvi a kod_potraviny do primární tabulky (spolehlivé filtrování)
 -  Dokumentace NULL hodnot v sekundární tabulce (mezinárodní srovnání)
--  Přechod na české aliasy bez diakritiky (čitelnost pro české týmy)
--  Optimalizace struktury CTE - modularita, kvalita dat, kontroly
+-  Přechod na české aliasy bez diakritiky
+
 
 DŮLEŽITÉ POZNATKY PRO BUDOUCNOST:
 1. Vždy testovat existující kombinace kódů před implementací
@@ -135,7 +155,8 @@ DŮLEŽITÉ POZNATKY PRO BUDOUCNOST:
 5. Systematické debugging šetří čas při řešení komplexních problémů
 6. Kódy (kod_odvetvi, kod_potraviny) jsou nutné pro spolehlivé filtrování
 7. NULL hodnoty v sekundární tabulce mohou zkreslit mezinárodní srovnání
-8. České aliasy bez diakritiky zlepšují čitelnost pro české vývojáře
+
+
 
 */
 
